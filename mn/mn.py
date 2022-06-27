@@ -5,6 +5,12 @@ import numpy as np
 import typing
 from typing import List
 from sty import fg, bg, ef, rs
+import copy
+
+
+def debug_output(msg):
+    print(bg.red + fg.white + 'DEBUG' + bg.rs + fg.rs + ": " + msg)
+
 
 # * coordinates
 
