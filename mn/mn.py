@@ -1,14 +1,12 @@
 # solve lattice model with n rows and m columns
 # the 'oxygen' molecules are locate at {1 3..2m-1}x{1 3..2n-1}
 
-# * coordinates
-
 import numpy as np
 import typing
 from typing import List
 from sty import fg, bg, ef, rs
 
-# ** functions
+# * coordinates
 
 
 def boundary_positions(m, n):
@@ -74,12 +72,62 @@ def get_neighbors(pos, m, n):
 #   - if it has 2 neighbors, split into 2 subroutines
 
 
-def sol(state, m, n, pieces):
-    # TODO
+def unfilled_positions(state, m, n):
+    lst = []
+    for i in range(2 * m + 1):
+        for j in range(2 * n + 1):
+            if (i + j) % 2 == 1 and state[i, j] == '':
+                lst.append((i, j))
+    return lst
+
+
+def get_left_most_in_down_compare_gt(pos1, pos2):
+    x1, y1 = pos1
+    x2, y2 = pos2
+    if y1 < y2:
+        return 1
+    elif y1 > y2:
+        return -1  # y1 = y2 below
+    elif x1 < x2:
+        return 1
+    elif x1 > x2:
+        return -1
+    else:
+        return 0
+
+
+def max_elem_with_cmp(lst, gt_fn):
+    if len(lst) < 1:
+        raise RuntimeError("max_elem_with_cmp: lst shouldn't be empty.")
+    elif len(lst) == 1:
+        return lst[0]
+
+    max_elem = lst[0]
+    for n in range(1, len(lst)):
+        if gt_fn(lst[n], max_elem) == 1:
+            max_elem = lst[n]
+
+    return max_elem
+
+
+def get_left_most_in_down_most(lst):
+    return max_elem_with_cmp(lst, get_left_most_in_down_compare_gt)
+
+
+def maybe_fill_new(state, pos, pieces):
     pass
 
 
-# * draw
+def sol(state, m, n, pieces):
+    unfilled = unfilled_positions(state, m, n)
+    if len(unfilled) == 0:
+        return state
+    else:
+        pos = get_left_most_in_down_most(unfilled)
+        return maybe_fill_new(state, pos, pieces)
+
+
+# * render
 
 
 def render(state, m, n):
@@ -112,7 +160,7 @@ def test_fn():
     return 2
 
 
-# * main
+# * initial state
 
 
 def gen_empty_state(m, n):
@@ -151,5 +199,6 @@ if __name__ == '__main__':
 
     print('\n' + fg.blue + 'Initial state:' + fg.rs + '\n')
     render(state, M, N)
+    print('')
 
     pass
