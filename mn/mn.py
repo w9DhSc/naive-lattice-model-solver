@@ -120,15 +120,59 @@ def get_left_most_in_down_most(lst):
     return max_elem_with_cmp(lst, get_left_most_in_down_compare_gt)
 
 
+def vertex_p(pos, m, n):
+    x, y = pos
+    return 0 <= x and x <= 2 * m and 0 <= y and y <= 2 * n and (x + y) % 2 == 1
+
+
+def filled_p(pos, state, m, n):
+    x, y = pos
+    if (not (vertex_p(pos, m, n))):
+        raise RuntimeError("filled_p: pos isn't a vertex!")
+
+    content = state[x, y]
+    return content == b'+' or content == b'-'
+
+
+def get_unfilled_with_most_filled_neighbors(unfilled, state, m, n):
+    num_filled_neighbors_dict = {}
+    num_filled_neighbors = []
+    for p in unfilled:
+        num = len(
+            [q for q in get_neighbors(p, m, n) if filled_p(q, state, m, n)])
+        num_filled_neighbors_dict[p] = num
+        num_filled_neighbors.append(num)
+
+    max_num = max(num_filled_neighbors)
+    return [p for p in unfilled if num_filled_neighbors_dict[p] == max_num]
+
+
 def maybe_fill_new(state, pos, pieces):
+
     pass
 
 
+def some_test(state, m, n):
+    """test unfilled_positions, get_unfilled_with_most_filled_neighbors
+    and get_left_most_in_down_most"""
+    state_clone = copy.deepcopy(state)
+    unfilled_ = unfilled_positions(stqate_clone, m, n)
+    unfilled = get_unfilled_with_most_filled_neighbors(unfilled_, state_clone,
+                                                       m, n)
+    pos = get_left_most_in_down_most(unfilled)
+    print("[debug], pos: {}".format(pos))
+    for p in unfilled:
+        state_clone[p[0], p[1]] = b'+'
+    render(state_clone, m, n)
+
+
 def sol(state, m, n, pieces):
-    unfilled = unfilled_positions(state, m, n)
-    if len(unfilled) == 0:
+    unfilled_ = unfilled_positions(state, m, n)
+
+    if len(unfilled_) == 0:
         return state
     else:
+        unfilled = ge(unfilled_, state, m, n)
         pos = get_left_most_in_down_most(unfilled)
         return maybe_fill_new(state, pos, pieces)
 
