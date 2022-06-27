@@ -11,6 +11,14 @@ from sty import fg, bg, ef, rs
 # ** functions
 
 
+def boundary_positions(m, n):
+    down = [(2 * x + 1, 0) for x in range(m)]
+    left = [(0, 2 * y + 1) for y in range(n)]
+    up = [(2 * x + 1, 2 * n) for x in range(m)]
+    right = [(2 * m, 2 * y + 1) for y in range(n)]
+    return down + left + up + right
+
+
 def at_boundary_p(pos, m, n):
     x, y = pos
     return x == 0 or x == 2 * m or y == 0 or y == 2 * n
@@ -84,6 +92,7 @@ def render(state, m, n):
     for jj in range(2 * n + 1):
         for i in range(2 * m + 1):
             j = 2 * n - jj
+
             if i % 2 == 0 and j % 2 == 0:
                 print(empty_str, end="")
             elif (i % 2 == 1 and j % 2 == 1):
@@ -112,12 +121,18 @@ def gen_empty_state(m, n):
     return tmp_state
 
 
-def fill_boundary_condition(state, bd_cond):
-    positive, negative = bd_cond
-    for x, y in positive:
-        state[x, y] = '+'
-    for x, y in negative:
-        state[x, y] = '-'
+def fill_boundary_condition(state, boundary_negatives, M, N):
+    for x, y in boundary_positions(M, N):
+        state[x, y] = b'+'
+
+    for x, y in boundary_negatives:
+        state[x, y] = b'-'
+
+    return state
+
+
+def default_boundary_negative_positions(m, n):
+    return [(1, 2 * n), (2 * m - 1, 0)]
 
 
 if __name__ == '__main__':
@@ -126,18 +141,15 @@ if __name__ == '__main__':
     M = 7
     state = gen_empty_state(M, N)
 
-    # TODO: specify boundary condition
-    boundary_condition = ()
-    for i, j in [(1, 0), (3, 0), (5, 0), (0, 3)]:
-        state[i, j] = '+'
-
-    for i, j in [(0, 1), (0, 3), (2, 5)]:
-        state[i, j] = '-'
+    # TODO: specify '-'s to put on the boundary
+    boundary_neg = default_boundary_negative_positions(M, N)
 
     # TODO: declare puzzle pieces
     puzzle_pieces: List[List[str]] = []
-    # state = fill_boundary_condition(state, boundary_condition)
+    state = fill_boundary_condition(state, boundary_neg, M, N)
     # solutions = sol(state, M, N, puzzle_pieces)
+
+    print('\n' + fg.blue + 'Initial state:' + fg.rs + '\n')
     render(state, M, N)
 
     pass
