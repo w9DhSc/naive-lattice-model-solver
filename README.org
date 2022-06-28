@@ -4,7 +4,9 @@
 
 * usage
 
-For help, use the ~-h~ flag to obtain SYNOPSIS.
+First, ensure the [[*dependencies][dependencies]] are met.
+
+SYNOPSIS:
 
 #+begin_example
 mn.py [OPTION...]
@@ -21,3 +23,9 @@ Options:
 The program currently uses a very naive brute-force solver, which stucks even for lattices as small as 4x4.
 
 Please let me know if you have ideas on improving the program (the algorithm, in particular).
+
+* dependencies
+
+- numpy
+- sty
+- sympy
