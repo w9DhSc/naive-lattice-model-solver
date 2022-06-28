@@ -1,0 +1,23 @@
+#+title: Naive solver for six-vertex lattice models
+
+[[file:o.png][screenshot]]
+
+* usage
+
+For help, use the ~-h~ flag to obtain SYNOPSIS.
+
+#+begin_example
+mn.py [OPTION...]
+num_cols and num_rows default to 3 unless specified.
+Options:
+        -m, --num_cols   Number of columns.
+        -n, --num_rows   Number of rows.
+        -h               give this help.
+        -s               suppress output of solutions
+#+end_example
+
+* disclaimer
+
+The program currently uses a very naive brute-force solver, which stucks even for lattices as small as 4x4.
+
+Please let me know if you have ideas on improving the program (the algorithm, in particular).
