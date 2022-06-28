@@ -214,6 +214,11 @@ def some_test(state, m, n):
     render(state_clone, m, n)
 
 
+# TODO
+def sol_brute_force(state, m, n, pieces):
+    pass
+
+
 def sol(state, m, n, pieces):
     unfilled_ = unfilled_positions(state, m, n)
 
@@ -279,6 +284,11 @@ def fill_boundary_condition(state, boundary_negatives, M, N):
 
 def default_boundary_negative_positions(m, n):
     return [(1, 2 * n), (2 * m - 1, 0)]
+
+
+# TODO
+def solution_p(state, puzzle_pieces, m, n):
+    pass
 
 
 if __name__ == '__main__':
