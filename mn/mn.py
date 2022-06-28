@@ -33,7 +33,7 @@ def at_boundary_p(pos, m, n):
 def count_neighbor_filled(pos, state, m, n):
     x, y = pos
     neighbors = get_neighbors(pos, m, n)
-    return len([n for n in neighbors if state[n[0], n[1]] != ''])
+    return len([n for n in neighbors if state[n[0], n[1]] != ' '])
 
 
 def get_neighbor_centers(pos, m, n):
@@ -84,7 +84,7 @@ def unfilled_positions(state, m, n):
     lst = []
     for i in range(2 * m + 1):
         for j in range(2 * n + 1):
-            if (i + j) % 2 == 1 and state[i, j] == '':
+            if (i + j) % 2 == 1 and state[i, j] == 0:
                 lst.append((i, j))
     return lst
 
@@ -133,7 +133,7 @@ def filled_p(pos, state, m, n):
         raise RuntimeError("filled_p: pos isn't a vertex!")
 
     content = state[x, y]
-    return content == b'+' or content == b'-'
+    return content == 2 or content == 1
 
 
 def get_unfilled_with_most_filled_neighbors(unfilled, state, m, n):
@@ -210,7 +210,7 @@ def some_test(state, m, n):
     pos = get_left_most_in_down_most(unfilled)
     print("[debug], pos: {}".format(pos))
     for p in unfilled:
-        state_clone[p[0], p[1]] = b'+'
+        state_clone[p[0], p[1]] = 2
     render(state_clone, m, n)
 
 
@@ -248,11 +248,11 @@ def render(state, m, n):
                 print(empty_str, end="")
             elif (i % 2 == 1 and j % 2 == 1):
                 print(oxygen_str, end="")
-            elif state[i, j] == b'+':
+            elif state[i, j] == 2:
                 print(positive_str, end="")
-            elif state[i, j] == b'-':
+            elif state[i, j] == 1:
                 print(negative_str, end="")
-            elif state[i, j] == '':
+            elif state[i, j] == 0:
                 print(unfilled_str, end="")
 
             if i == 2 * m:
@@ -267,27 +267,32 @@ def test_fn():
 
 
 def gen_empty_state(m, n):
-    tmp_state = np.chararray((2 * m + 1, 2 * n + 1))
-    tmp_state[:] = ''
+    tmp_state = np.zeros((2 * m + 1, 2 * n + 1), dtype=int)
     return tmp_state
 
 
-def fill_boundary_condition(state, boundary_negatives, M, N):
-    for x, y in boundary_positions(M, N):
-        state[x, y] = b'+'
+def fill_boundary_condition(state, m, n):
+    for x, y in boundary_positions(m, n):
+        state[x, y] = 2
 
-    for x, y in boundary_negatives:
-        state[x, y] = b'-'
+    for x, y in [(1, 2 * n), (2 * m - 1, 0)]:
+        state[x, y] = 1
 
     return state
 
 
-def default_boundary_negative_positions(m, n):
-    return [(1, 2 * n), (2 * m - 1, 0)]
+def encode_locally(state, pos):
+    x, y = pos
+    up = state[x, y + 1]
+    left = state[x - 1, y]
+    right = state[x + 1, y]
+    down = state[x, y - 1]
+    return [up, left, right, down]
 
 
 # TODO
 def solution_p(state, puzzle_pieces, m, n):
+
     pass
 
 
@@ -295,13 +300,10 @@ if __name__ == '__main__':
     # n rows and m columns
     N = 5
     M = 7
-    state = gen_empty_state(M, N)
-
-    boundary_neg = default_boundary_negative_positions(M, N)
 
     # TODO: declare puzzle pieces
     puzzle_pieces: List[List[str]] = []
-    state = fill_boundary_condition(state, boundary_neg, M, N)
+    state = fill_boundary_condition(gen_empty_state(M, N), M, N)
     # solutions = sol(state, M, N, puzzle_pieces)
 
     print('\n' + fg.blue + 'Initial state:' + fg.rs + '\n')
