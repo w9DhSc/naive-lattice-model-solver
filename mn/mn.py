@@ -1,6 +1,7 @@
 # solve lattice model with n rows and m columns
 # the 'oxygen' molecules are locate at {1 3..2m-1}x{1 3..2n-1}
 
+import sys
 import numpy as np
 import typing
 from typing import List
@@ -9,12 +10,11 @@ from sty import fg, bg, ef, rs
 # for deep copy of lists
 import copy
 
+solutions = []
+
 
 def debug_output(msg):
     print(bg.red + fg.white + 'DEBUG' + bg.rs + fg.rs + ": " + msg)
-
-
-# * coordinates
 
 
 def boundary_positions(m, n):
@@ -23,61 +23,6 @@ def boundary_positions(m, n):
     up = [(2 * x + 1, 2 * n) for x in range(m)]
     right = [(2 * m, 2 * y + 1) for y in range(n)]
     return down + left + up + right
-
-
-def at_boundary_p(pos, m, n):
-    x, y = pos
-    return x == 0 or x == 2 * m or y == 0 or y == 2 * n
-
-
-def count_neighbor_filled(pos, state, m, n):
-    x, y = pos
-    neighbors = get_neighbors(pos, m, n)
-    return len([n for n in neighbors if state[n[0], n[1]] != ' '])
-
-
-def get_neighbor_centers(pos, m, n):
-    x, y = pos
-    if x == 0:
-        return [(x + 1, y)]
-    elif x == 2 * m:
-        return [(x - 1, y)]
-    elif y == 0:
-        return [(x, y + 1)]
-    elif y == 2 * n:
-        return [(x, y - 1)]
-    elif y % 2 == 0:
-        # on 'vertical lines
-        return [(x, y - 1), (x, y + 1)]
-    else:
-        return [(x - 1, y), (x + 1, y)]
-
-
-def center_to_vertices(pos):
-    x, y = pos
-    return [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
-
-
-def get_neighbors(pos, m, n):
-    x, y = pos
-    if x < 0 or x > 2 * m - 1 or y < 0 or y > 2 * n - 1 or (x + y) % 2 == 0:
-        raise RuntimeError(
-            "Illegal vertex position ({}, {}). Lattice size: {} rows, {} columns."
-            .format(x, y, m, n))
-    return [
-        z for z in sum(
-            map(center_to_vertices, get_neighbor_centers(pos, m, n)), [])
-        if (not z == pos)
-    ]
-
-
-# * algorithm
-# given boundary conditions:
-# - locate_target :: among the vertices with most number of neighbors, choose the *left* most in *down* most one
-#     TODO: prove by induction {min max # neighbor = 2}
-#   - if it has 3 neighbors, it is automatically determined.
-#     goto locate_target
-#   - if it has 2 neighbors, split into 2 subroutines
 
 
 def unfilled_positions(state, m, n):
@@ -89,135 +34,26 @@ def unfilled_positions(state, m, n):
     return lst
 
 
-def get_left_most_in_down_compare_gt(pos1, pos2):
-    x1, y1 = pos1
-    x2, y2 = pos2
-    if y1 < y2:
-        return 1
-    elif y1 > y2:
-        return -1  # y1 = y2 below
-    elif x1 < x2:
-        return 1
-    elif x1 > x2:
-        return -1
-    else:
-        return 0
-
-
-def max_elem_with_cmp(lst, gt_fn):
-    if len(lst) < 1:
-        raise RuntimeError("max_elem_with_cmp: lst shouldn't be empty.")
-    elif len(lst) == 1:
-        return lst[0]
-
-    max_elem = lst[0]
-    for n in range(1, len(lst)):
-        if gt_fn(lst[n], max_elem) == 1:
-            max_elem = lst[n]
-
-    return max_elem
-
-
-def get_left_most_in_down_most(lst):
-    return max_elem_with_cmp(lst, get_left_most_in_down_compare_gt)
-
-
-def vertex_p(pos, m, n):
-    x, y = pos
-    return 0 <= x and x <= 2 * m and 0 <= y and y <= 2 * n and (x + y) % 2 == 1
-
-
-def filled_p(pos, state, m, n):
-    x, y = pos
-    if (not (vertex_p(pos, m, n))):
-        raise RuntimeError("filled_p: pos isn't a vertex!")
-
-    content = state[x, y]
-    return content == 2 or content == 1
-
-
-def get_unfilled_with_most_filled_neighbors(unfilled, state, m, n):
-    num_filled_neighbors_dict = {}
-    num_filled_neighbors = []
-    for p in unfilled:
-        num = len(
-            [q for q in get_neighbors(p, m, n) if filled_p(q, state, m, n)])
-        num_filled_neighbors_dict[p] = num
-        num_filled_neighbors.append(num)
-
-    max_num = max(num_filled_neighbors)
-    return [p for p in unfilled if num_filled_neighbors_dict[p] == max_num]
-
-
-# TODO: implement this
-def get_puzzle_at_point(state, pos):
-    pass
-
-
-# TODO: implement this
-def inspect(state, pos, nc, pieces, m, n):
-    """According to given pieces, list all possibilities of filling
-    the pieces centered at nc.
-    Return dict of {pos, char to fill in there}.
-    """
-    cx, cy = nc
-    unfilled = [
-        p for p in [(cx - 1, cy), (cx, cy + 1), (cx, cy - 1), (cx + 1, cy)]
-        if (not filled_p(p, state, m, n))
-    ]
-
-    unfilled_num = len(unfilled)
-
-    if unfilled_num == 0:
-        raise RuntimeError(
-            "expecting to fill a pieces, but it has already been filled.")
-    elif unfilled_num == 1:
-        pass
-    else:
-        return {}  # give up (unfilled_num > 2:)
-
-    pass
-
-
-def maybe_fill_new(state, pos, pieces, m, n):
-    neighbor_center_one_or_two = get_neighbor_centers(pos, m, n)
-
-    nc_num = len(neighbor_center_one_or_two)
-    if nc_num == 1:
-        debug_output("pos: {}".format(pos))
-        debug_output("m, n: {}, {}".format(m, n))
-        raise RuntimeError(
-            "Attempt to fill a vertex with only one neighbor center.  Currently no support for incomplete boundary condition."
-        )
-
-    # then we assume nc_num = 2, and should look at the two neighboring pieces
-    for nc in neighbor_center_one_or_two:
-        inspect(state, pos, nc, pieces, m, n)
-
-    pass
-
-
-def some_test(state, m, n):
-    """test unfilled_positions,
-    get_unfilled_with_most_filled_neighbors and
-    get_left_most_in_down_most.
-
-    """
-    state_clone = copy.deepcopy(state)
-    unfilled_ = unfilled_positions(stqate_clone, m, n)
-    unfilled = get_unfilled_with_most_filled_neighbors(unfilled_, state_clone,
-                                                       m, n)
-    pos = get_left_most_in_down_most(unfilled)
-    print("[debug], pos: {}".format(pos))
-    for p in unfilled:
-        state_clone[p[0], p[1]] = 2
-    render(state_clone, m, n)
-
-
 # TODO
-def sol_brute_force(state, m, n, pieces):
+def sol_brute_force(state, m, n, pieces, unfilled):
     unfilled = unfilled_positions(state, m, n)
-    pass
+    num = len(unfilled)
+    if num == 0:
+        if solution_p(state, pieces, m, n):
+            print("⋆", end="")
+            solutions.append(state)
+        else:
+            return []
+    else:
+        state_clone_1 = copy.deepcopy(state)
+        state_clone_2 = copy.deepcopy(state)
+        x, y = unfilled[0]
+        rest = unfilled[1:]
+        state_clone_1[x, y] = 1
+        state_clone_2[x, y] = 2
+        del state
+        sol_brute_force(state_clone_1, m, n, pieces, rest)
+        sol_brute_force(state_clone_2, m, n, pieces, rest)
 
 
 def sol(state, m, n, pieces):
@@ -304,19 +140,42 @@ def solution_p(state, puzzle_pieces, m, n):
     return not broken
 
 
+def print_help():
+    print("Run `python mn.py m n' to solve model with m columns and n rows.")
+
+
 if __name__ == '__main__':
-    # n rows and m columns
-    N = 5
-    M = 7
+    # m cols, n rows
+    if not len(sys.argv) == 3:
+        print_help()
+        raise RuntimeError("Wrong number of command line arguments.")
+
+    try:
+        M = int(sys.argv[1])
+        N = int(sys.argv[2])
+    except ValueError:
+        print_help()
+        raise RuntimeError("Invalid command line arguments.")
+
+    if M < 1 or N < 1:
+        raise RuntimeError("Invalid col/row numbers.")
 
     # TODO: declare puzzle pieces
     puzzle_pieces = [[2, 2, 2, 2], [1, 1, 1, 1], [1, 2, 2, 1], [2, 1, 1, 2],
                      [2, 1, 2, 1], [1, 2, 1, 2]]
     state = fill_boundary_condition(gen_empty_state(M, N), M, N)
-    # solutions = sol(state, M, N, puzzle_pieces)
 
-    print('\n' + fg.blue + 'Initial state:' + fg.rs + '\n')
+    print('\nInitial state:\n')
     render(state, M, N)
     print('')
 
-    pass
+    print(fg.da_magenta + 'Solving with brute force 😠' + fg.rs)
+    sol_brute_force(copy.deepcopy(state), M, N, puzzle_pieces,
+                    unfilled_positions(state, M, N))
+
+    print(fg.green + '\nFound {} solutions:'.format(len(solutions)) + fg.rs +
+          '\n')
+
+    for sol in solutions:
+        render(sol, M, N)
+        print(' ')
