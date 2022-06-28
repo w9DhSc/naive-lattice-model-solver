@@ -1,7 +1,8 @@
 # solve lattice model with n rows and m columns
 # the 'oxygen' molecules are locate at {1 3..2m-1}x{1 3..2n-1}
 
-import sys
+# TODO: specify dependencies
+import sys, getopt
 import numpy as np
 import typing
 from typing import List
@@ -9,6 +10,7 @@ from typing import List
 from sty import fg, bg, ef, rs
 # for deep copy of lists
 import copy
+from sympy import symbols
 
 solutions = []
 
@@ -118,7 +120,7 @@ def fill_boundary_condition(state, m, n):
     return state
 
 
-def encode_locally(state, pos):
+def piece_at_point(state, pos):
     x, y = pos
     up = state[x, y + 1]
     left = state[x - 1, y]
@@ -133,7 +135,7 @@ def solution_p(state, puzzle_pieces, m, n):
         if not broken:
             for j in range(n):
                 center_pos = (2 * i + 1, 2 * j + 1)
-                code = encode_locally(state, center_pos)
+                code = piece_at_point(state, center_pos)
                 if code not in puzzle_pieces:
                     broken = True
                     break
@@ -141,28 +143,96 @@ def solution_p(state, puzzle_pieces, m, n):
 
 
 def print_help():
-    print("Run `python mn.py m n' to solve model with m columns and n rows.")
+    print("""mn.py [OPTION...]
+num_cols and num_rows default to 3 unless specified.
+Options:
+\t-m, --num_cols\t Number of columns.
+\t-n, --num_rows\t Number of rows.
+\t-h            \t give this help.
+\t-s            \t suppress output of solutions""")
+
+
+def compute_summand_in_partition_function(state,
+                                          m,
+                                          n,
+                                          weights,
+                                          weights_specific,
+                                          specific=True):
+    summand = 1
+    for i in range(m):
+        for j in range(n):
+            center_pos = (2 * i + 1, 2 * j + 1)
+            code = piece_at_point(state, center_pos)
+            if code not in puzzle_pieces:
+                raise RuntimeError(
+                    "Attempt to compute partition function for an illegal state."
+                )
+            abstract_weight_symbol = weights[piece_to_key(code)]
+            if not specific:
+                summand = summand * abstract_weight_symbol
+            else:
+                specific_weight_mediate = weights_specific[
+                    abstract_weight_symbol.name]
+                specific_weight = specific_weight_mediate if (
+                    not specific_weight_mediate
+                    == 'z') else symbols('z' + str(j + 1))
+                summand = summand * specific_weight
+    return summand
+
+
+def piece_to_key(piece):
+    return str(piece[0] * 1000 + piece[1] * 100 + piece[2] * 10 + piece[3])
+
+
+def key_to_piece(key):
+    return [int(digit) for digit in key]
 
 
 if __name__ == '__main__':
     # m cols, n rows
-    if not len(sys.argv) == 3:
-        print_help()
-        raise RuntimeError("Wrong number of command line arguments.")
+    M = 3
+    N = 3
+    supress_solutions_output = False
 
     try:
-        M = int(sys.argv[1])
-        N = int(sys.argv[2])
-    except ValueError:
+        opts, args = getopt.getopt(sys.argv[1:], "shm:n:",
+                                   ["num_cols=", "num_rows="])
+    except getopt.GetoptError:
         print_help()
-        raise RuntimeError("Invalid command line arguments.")
+        sys.exit(2)
 
-    if M < 1 or N < 1:
-        raise RuntimeError("Invalid col/row numbers.")
+    for opt, arg in opts:
+        if opt == '-h':
+            print_help()
+            sys.exit()
+        elif opt in ("-m", "--num_cols"):
+            M = int(arg)
+        elif opt in ("-n", "--num_rows"):
+            N = int(arg)
+        elif opt == '-s':
+            supress_solutions_output = True
 
-    # TODO: declare puzzle pieces
-    puzzle_pieces = [[2, 2, 2, 2], [1, 1, 1, 1], [1, 2, 2, 1], [2, 1, 1, 2],
-                     [2, 1, 2, 1], [1, 2, 1, 2]]
+    # sadly lists are unhashable, although in python strings are lists of chars...
+    weights = {
+        "2222": symbols('a1'),
+        "1111": symbols('a2'),
+        "1221": symbols('b1'),
+        "2112": symbols('b2'),
+        "2121": symbols('c1'),
+        "1212": symbols('c2')
+    }
+
+    weights_specific = {
+        'a1': 1,
+        'a2': 0,
+        'b1': 1,
+        'b2': 'z',
+        'c1': 'z',
+        'c2': 1
+    }
+
+    puzzle_pieces = [key_to_piece(key) for key in weights]
+
     state = fill_boundary_condition(gen_empty_state(M, N), M, N)
 
     print('\nInitial state:\n')
@@ -173,9 +243,15 @@ if __name__ == '__main__':
     sol_brute_force(copy.deepcopy(state), M, N, puzzle_pieces,
                     unfilled_positions(state, M, N))
 
-    print(fg.green + '\nFound {} solutions:'.format(len(solutions)) + fg.rs +
-          '\n')
+    print(fg.green + '\nFound {} solutions'.format(len(solutions)) +
+          ('.' if supress_solutions_output else ': ') + fg.rs + '\n')
 
+    partition_function = 0
     for sol in solutions:
-        render(sol, M, N)
-        print(' ')
+        if not supress_solutions_output:
+            render(sol, M, N)
+            print(' ')
+
+        partition_function = partition_function + compute_summand_in_partition_function(
+            sol, M, N, weights, weights_specific, specific=True)
+    print("\nPartition function: {}".format(partition_function))
