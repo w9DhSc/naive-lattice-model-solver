@@ -216,6 +216,7 @@ def some_test(state, m, n):
 
 # TODO
 def sol_brute_force(state, m, n, pieces):
+    unfilled = unfilled_positions(state, m, n)
     pass
 
 
@@ -290,10 +291,17 @@ def encode_locally(state, pos):
     return [up, left, right, down]
 
 
-# TODO
 def solution_p(state, puzzle_pieces, m, n):
-
-    pass
+    broken = False
+    for i in range(m):
+        if not broken:
+            for j in range(n):
+                center_pos = (2 * i + 1, 2 * j + 1)
+                code = encode_locally(state, center_pos)
+                if code not in puzzle_pieces:
+                    broken = True
+                    break
+    return not broken
 
 
 if __name__ == '__main__':
@@ -302,7 +310,8 @@ if __name__ == '__main__':
     M = 7
 
     # TODO: declare puzzle pieces
-    puzzle_pieces: List[List[str]] = []
+    puzzle_pieces = [[2, 2, 2, 2], [1, 1, 1, 1], [1, 2, 2, 1], [2, 1, 1, 2],
+                     [2, 1, 2, 1], [1, 2, 1, 2]]
     state = fill_boundary_condition(gen_empty_state(M, N), M, N)
     # solutions = sol(state, M, N, puzzle_pieces)
 
