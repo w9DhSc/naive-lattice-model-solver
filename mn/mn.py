@@ -4,7 +4,9 @@
 import numpy as np
 import typing
 from typing import List
+# for printing with colors
 from sty import fg, bg, ef, rs
+# for deep copy of lists
 import copy
 
 
@@ -147,14 +149,60 @@ def get_unfilled_with_most_filled_neighbors(unfilled, state, m, n):
     return [p for p in unfilled if num_filled_neighbors_dict[p] == max_num]
 
 
-def maybe_fill_new(state, pos, pieces):
+# TODO: implement this
+def get_puzzle_at_point(state, pos):
+    pass
+
+
+# TODO: implement this
+def inspect(state, pos, nc, pieces, m, n):
+    """According to given pieces, list all possibilities of filling
+    the pieces centered at nc.
+    Return dict of {pos, char to fill in there}.
+    """
+    cx, cy = nc
+    unfilled = [
+        p for p in [(cx - 1, cy), (cx, cy + 1), (cx, cy - 1), (cx + 1, cy)]
+        if (not filled_p(p, state, m, n))
+    ]
+
+    unfilled_num = len(unfilled)
+
+    if unfilled_num == 0:
+        raise RuntimeError(
+            "expecting to fill a pieces, but it has already been filled.")
+    elif unfilled_num == 1:
+        pass
+    else:
+        return {}  # give up (unfilled_num > 2:)
+
+    pass
+
+
+def maybe_fill_new(state, pos, pieces, m, n):
+    neighbor_center_one_or_two = get_neighbor_centers(pos, m, n)
+
+    nc_num = len(neighbor_center_one_or_two)
+    if nc_num == 1:
+        debug_output("pos: {}".format(pos))
+        debug_output("m, n: {}, {}".format(m, n))
+        raise RuntimeError(
+            "Attempt to fill a vertex with only one neighbor center.  Currently no support for incomplete boundary condition."
+        )
+
+    # then we assume nc_num = 2, and should look at the two neighboring pieces
+    for nc in neighbor_center_one_or_two:
+        inspect(state, pos, nc, pieces, m, n)
 
     pass
 
 
 def some_test(state, m, n):
-    """test unfilled_positions, get_unfilled_with_most_filled_neighbors
-    and get_left_most_in_down_most"""
+    """test unfilled_positions,
+    get_unfilled_with_most_filled_neighbors and
+    get_left_most_in_down_most.
+
+    """
     state_clone = copy.deepcopy(state)
     unfilled_ = unfilled_positions(stqate_clone, m, n)
     unfilled = get_unfilled_with_most_filled_neighbors(unfilled_, state_clone,
@@ -174,7 +222,7 @@ def sol(state, m, n, pieces):
     else:
         unfilled = ge(unfilled_, state, m, n)
         pos = get_left_most_in_down_most(unfilled)
-        return maybe_fill_new(state, pos, pieces)
+        return maybe_fill_new(state, pos, pieces, m, n)
 
 
 # * render
@@ -239,7 +287,6 @@ if __name__ == '__main__':
     M = 7
     state = gen_empty_state(M, N)
 
-    # TODO: specify '-'s to put on the boundary
     boundary_neg = default_boundary_negative_positions(M, N)
 
     # TODO: declare puzzle pieces
