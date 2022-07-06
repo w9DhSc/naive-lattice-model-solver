@@ -181,7 +181,9 @@ def compute_summand_in_partition_function(state,
 
 
 def piece_to_key(piece):
-    return str(piece[0] * 1000 + piece[1] * 100 + piece[2] * 10 + piece[3])
+    n = piece[0] * 1000 + piece[1] * 100 + piece[2] * 10 + piece[3]
+    k = str(n)
+    return (4 - len(k)) * '0' + k
 
 
 def key_to_piece(key):
