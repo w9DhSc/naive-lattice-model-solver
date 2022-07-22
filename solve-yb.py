@@ -143,4 +143,7 @@ if __name__ == '__main__':
                             pm_str = ''.join(['+' if x == 1 else '-' for x in [alpha, beta, gamma, delta, epsilon, eta]])
                             zl = solve_left(alpha, beta, gamma, delta, epsilon, eta)
                             zr = solve_right(alpha, beta, gamma, delta, epsilon, eta)
-                            print((fg.green + "{}" + fg.rs + ": {} = {}").format(pm_str, zl, zr))
+                            if not (zl == 0 and zr == 0):
+                                print((fg.green + "{}" + fg.rs + ": {} = {}").format(pm_str, zl, zr))
+                            else:
+                                print(fg.red + "excluded" + fg.rs + ": {}".format(pm_str))
