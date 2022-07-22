@@ -134,6 +134,7 @@ def solve_left(alpha, beta, gamma, delta, epsilon, eta):
 
 if __name__ == '__main__':
     alpha = 1
+    excluded = []
     for beta in [0, 1]:
         for gamma in [0, 1]:
             for delta in [0, 1]:
