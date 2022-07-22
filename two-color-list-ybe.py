@@ -1,4 +1,5 @@
-from sympy import symbols
+# from sympy import symbols
+from sympy import *  # bad practice
 import csv
 import itertools
 
@@ -137,6 +138,7 @@ def legal_state_to_Z(state, colors):
     """
     Returns the partition function of a legal state.
     The parameters are the same as those of `is_state_legal`
+    @param split: if True, split vertical weights and diagonal weights. Instead of a prduct, a pair is returned.
     """
     assert is_state_legal(state, colors)
     Z = 1
@@ -197,3 +199,35 @@ def gen_eqs():
         Zl = solve_left_from_bd(True, bd, colors)
         Zr = solve_left_from_bd(False, bd, colors)
         print("bd: {} :> {} = {}".format(bd, Zl, Zr))
+
+
+def diag_weights(colors={1, 2, 3}):
+    ws = []
+    for i in colors:
+        ws.append(symbols("D_{{{}}}^{{3}}".format(i)))
+    for i, j in itertools.permutations(colors, r=2):
+        for sup1 in [1, 2]:
+            ws.append(symbols("D_{{{}{}}}^{{{}}}".format(i, j, sup1)))
+    return ws
+
+
+def gen_mat():
+    mat = []
+    for bd in gen_bds():
+        Zl = solve_left_from_bd(True, bd, colors)
+        Zr = solve_left_from_bd(False, bd, colors)
+
+        # (symbols("V_1") * symbols("V_2") + symbols("V_3")).coeff(symbols("V_2")))
+        row = []
+        for dw in diag_weights():
+            row.append((Zl - Zr).coeff(dw))
+        mat.append(row)
+    return mat
+
+
+def write_mat():
+    with open('mat.csv', 'w') as f:
+        # create the csv writer
+        writer = csv.writer(f)
+        for r in gen_mat():
+            writer.writerow([str(coeff) for coeff in r])
