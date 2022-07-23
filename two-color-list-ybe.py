@@ -24,51 +24,42 @@ class Weight:
         i = piece[0]
         j = piece[1]
 
+        # self.pos
+        self.pos = '(S)' if pos == "row1" else '(T)' if pos == "row2" else ''
+
         # self.sup1
 
-        if i == j:  # only one color
-            self.sup1 = 3
-        else:  # two colors
-            if piece == [i, j, i, j]:
-                self.sup1 = 1
+        if pos == "diag":
+            if i == j:  # only one color
+                self.type = 'A'
+            elif piece == [i, j, i, j]:
+                self.type = 'B'
             elif piece == [i, j, j, i]:
-                self.sup1 = 2
+                self.type = 'C'
+            else:
+                raise RuntimeError("piece {} illegal".format(piece))
+        else:  # pos = "row1" or "row2"
+            if i == j:
+                self.type = 'a'
+            elif piece == [i, j, i, j]:
+                self.type = 'b'
+            elif piece == [i, j, j, i]:
+                self.type = 'c'
             else:
                 raise RuntimeError("piece {} illegal".format(piece))
 
-        # self.sup2 and self.type
+        # self.sub1, self.sub2
 
-        if pos == "diag":
-            self.sup2 = 0
-            self.type = 'D'
-        elif pos == "row1":
-            self.sup2 = 1
-            self.type = 'V'
-        elif pos == "row2":
-            self.sup2 = 2
-            self.type = 'V'
-        else:
-            raise RuntimeError(
-                "Illegal position info in piece. Only diag, row1 or row2 are supported."
-            )
-
-        # self.sub1
-
-        if i == j:
-            self.sub1 = i
-            self.sub2 = 0
-        else:
-            self.sub1 = i
-            self.sub2 = j
+        self.sub1 = i
+        self.sub2 = j if i != j else -1
 
     def weight_symbolic(self):
-        scripts = [
-            str(s) if s != 0 else ''
-            for s in [self.sub1, self.sub2, self.sup1, self.sup2]
-        ]
-        return symbols("{}_{{{}{}}}^{{{}{}}}".format(self.type, scripts[0],
-                                                     scripts[1], scripts[2],
-                                                     scripts[3]))
+        subscripts = '_{' + ''.join(
+            str(i) if i >= 0 else '' for i in [self.sub1, self.sub2]) + '}'
+        # subscripts = ''.join(f"{chr(0x2080+i)}"
+        #                      for i in [self.sub1, self.sub2])
+
+        return symbols(self.type + subscripts + self.pos)
 
 
 Z = {
@@ -94,17 +85,24 @@ def card_2_subsets(s):
     return [set(i) for i in itertools.combinations(s, 2)]
 
 
-def gen_bds():
+def gen_bds(colors={0, 1, 2}):
     """
     Returns all boundary conditions of the 72 nontrivial YBEs.
     """
     bds = []
     for i in [3, 4, 5, 6, 7, 9, 10]:
-        for a, b in itertools.permutations({1, 2, 3}, r=2):
+        for a, b in itertools.permutations(colors, r=2):
             bds.append([a if j == 1 else b for j in Z[i]])
     for i in [12, 13, 14, 15, 16]:
-        for a, b, c in itertools.permutations({1, 2, 3}):
+        for a, b, c in itertools.permutations(colors):
             bds.append([a if j == 1 else b if j == 2 else c for j in Z[i]])
+    return bds
+
+
+def gen_bd_2():
+    bds = []
+    for i in [3, 4, 5, 6, 7, 9, 10]:
+        bds.append(Z[i])
     return bds
 
 
@@ -193,12 +191,20 @@ def import_hash_csv():
     return v_weight_hash
 
 
-def gen_eqs():
-    colors = {1, 2, 3}
+def gen_eqs(colors={0, 1, 2}):
     for bd in gen_bds():
         Zl = solve_left_from_bd(True, bd, colors)
         Zr = solve_left_from_bd(False, bd, colors)
-        print("bd: {} :> {} = {}".format(bd, Zl, Zr))
+        print("{} \\quad & {} = {} \\\\".format(''.join(str(i) for i in bd),
+                                                latex(Zl), latex(Zr)))
+
+
+def gen_eq_2(colors={1, 2}):
+    for bd in gen_bd_2():
+        Zl = solve_left_from_bd(True, bd, colors)
+        Zr = solve_left_from_bd(False, bd, colors)
+        print("{} \\quad & {} = {} \\\\".format(''.join(str(i) for i in bd),
+                                                latex(Zl), latex(Zr)))
 
 
 def diag_weights(colors={1, 2, 3}):
@@ -211,7 +217,7 @@ def diag_weights(colors={1, 2, 3}):
     return ws
 
 
-def gen_mat():
+def gen_mat(colors):
     mat = []
     for bd in gen_bds():
         Zl = solve_left_from_bd(True, bd, colors)
@@ -225,9 +231,9 @@ def gen_mat():
     return mat
 
 
-def write_mat():
+def write_mat(colors):
     with open('mat.csv', 'w') as f:
         # create the csv writer
         writer = csv.writer(f)
-        for r in gen_mat():
+        for r in gen_mat(colors):
             writer.writerow([str(coeff) for coeff in r])
